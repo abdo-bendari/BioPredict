@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0a5c7f;
+  --color-primary-light: #13abec;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101c22;
+  --color-border-light: #e2e8f0;
+  --color-text-main: #1e293b;
+  --color-text-muted: #64748b;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-background-light text-text-main antialiased;
+  }
+}
+
+.radial-glow {
+  background: radial-gradient(circle at center, rgba(10, 92, 126, 0.05) 0%, transparent 70%);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+}
