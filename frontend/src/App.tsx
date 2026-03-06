@@ -22,18 +22,20 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
 
   const handleNavigate = (page: Page) => {
     setCurrentPage(page);
   };
 
-  const handleLogin = () => {
+  const handleLogin = (token: string) => {
+    localStorage.setItem('token', token);
     setIsAuthenticated(true);
     setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     setIsAuthenticated(false);
     setCurrentPage('landing');
   };

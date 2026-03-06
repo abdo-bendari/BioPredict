@@ -21,7 +21,10 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -33,6 +36,17 @@ app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/medications', medicationRouter);
 app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/history', historyRouter);
+
+// SERVE FRONTEND IN PRODUCTION
+const distPath = path.join(__dirname, '../../dist');
+app.use(express.static(distPath));
+
+app.get('*', (req: Request, res: Response, next: NextFunction) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // Global history tracking for certain actions (example)
 // In a real app, you might apply these selectively in the routes files

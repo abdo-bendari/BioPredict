@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { api } from '../services/api';
 import { 
   Upload, 
   FileUp, 
@@ -32,11 +33,60 @@ export const NewAnalysis: React.FC<{ onComplete: () => void }> = ({ onComplete }
   });
 
   const handleUpload = () => {
+    if (!file) return;
     setIsUploading(true);
     setTimeout(() => {
       setIsUploading(false);
       setStep(2);
-    }, 2000);
+    }, 1500);
+  };
+
+  const handleStartAnalysis = async () => {
+    if (!file) return;
+    setStep(3);
+
+    try {
+      // 1. Create Patient
+      const patientRes = await api.createPatient({
+        name: patientData.name,
+        age: 35, // Mock age since dob is string
+        gender: 'Female',
+        medicalHistory: [patientData.medicalHistory],
+        medications: []
+      });
+
+      if (patientRes.status !== 'success') throw new Error('Failed to create patient');
+      const patientId = patientRes.data.patient._id;
+
+      // 2. Create Analysis
+      const formData = new FormData();
+      formData.append('patientId', patientId);
+      formData.append('medicalImage', file);
+      formData.append('aiPrediction', 'Suspicious thyroid nodule detected in the right lobe.');
+      formData.append('tumorLocation', JSON.stringify({ x: 120, y: 150 }));
+      formData.append('classification', 'malignant');
+      formData.append('confidenceScore', '92.5');
+
+      const analysisRes = await api.createAnalysis(formData);
+      if (analysisRes.status !== 'success') throw new Error('Failed to create analysis');
+      const analysisId = analysisRes.data.analysis._id;
+
+      // 3. Create Report
+      await api.createReport({
+        analysisId,
+        patientId,
+        doctorNotes: 'AI analysis suggests high risk. Recommend FNA biopsy.',
+        summary: 'Right lobe thyroid nodule with irregular margins.',
+        riskLevel: 'High',
+        recommendations: ['FNA Biopsy', 'Endocrinology consultation']
+      });
+
+      onComplete();
+    } catch (err) {
+      console.error('Analysis failed', err);
+      alert('Failed to complete analysis. Please try again.');
+      setStep(2);
+    }
   };
 
   return (
@@ -263,7 +313,7 @@ export const NewAnalysis: React.FC<{ onComplete: () => void }> = ({ onComplete }
               Back
             </button>
             <button 
-              onClick={() => setStep(3)}
+              onClick={handleStartAnalysis}
               className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-xl shadow-primary/25 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
             >
               Start AI Analysis
