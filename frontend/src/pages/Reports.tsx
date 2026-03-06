@@ -51,7 +51,7 @@ export const Reports: React.FC<{ onNavigate: (page: any) => void }> = ({ onNavig
             <div 
               key={report._id}
               className="group bg-white rounded-2xl border border-border-light overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/50 transition-all duration-300 cursor-pointer"
-              onClick={() => onNavigate('report-detail')}
+              onClick={() => onNavigate('report-detail', report._id)}
             >
               <div className="relative aspect-video bg-slate-900 overflow-hidden">
                 <img 

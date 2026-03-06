@@ -44,6 +44,8 @@ export const Signup: React.FC<{ onComplete: (token: string) => void; onLogin: ()
         email: formData.email,
         password: formData.password,
         passwordConfirm: formData.passwordConfirm,
+        licenseId: formData.licenseId,
+        specialization: formData.specialization,
         role: 'user' // Default role
       });
 

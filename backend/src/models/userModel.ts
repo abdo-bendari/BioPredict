@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  licenseId: String,
+  specialization: {
+    type: String,
+    enum: ['Radiologist', 'Endocrinologist', 'General Surgeon', 'Oncologist'],
+    default: 'Radiologist'
+  },
   password: {
     type: String,
     required: [true, 'Please provide a password'],

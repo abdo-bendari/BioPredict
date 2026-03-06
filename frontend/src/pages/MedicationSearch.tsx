@@ -16,60 +16,26 @@ export const MedicationSearch: React.FC = () => {
   const [suggestedMeds, setSuggestedMeds] = useState<{ name: string; type: string; desc: string; dosage: string; interactions: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleSymptomSearch = () => {
+  const handleSymptomSearch = async () => {
     if (!symptomSearch) return;
     setIsSearching(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const meds = [
-        { 
-          name: 'Levothyroxine', 
-          type: 'Hormone Replacement', 
-          desc: 'Synthetic version of the hormone thyroxine (T4), used to treat hypothyroidism.',
-          dosage: '25-200 mcg daily, taken on an empty stomach.',
-          interactions: 'Calcium, iron, antacids, and certain foods can interfere with absorption.'
-        },
-        { 
-          name: 'Methimazole', 
-          type: 'Antithyroid Agent', 
-          desc: 'Used to treat hyperthyroidism by preventing the thyroid gland from producing excess thyroid hormone.',
-          dosage: '5-60 mg daily, usually divided into 3 doses.',
-          interactions: 'Warfarin, digoxin, and beta-blockers may require monitoring.'
-        },
-        { 
-          name: 'Propranolol', 
-          type: 'Beta-Blocker', 
-          desc: 'Used to manage symptoms of hyperthyroidism like rapid heart rate and tremors.',
-          dosage: '10-40 mg 3-4 times daily as needed.',
-          interactions: 'May mask symptoms of hypoglycemia in diabetic patients.'
-        },
-        { 
-          name: 'Ibuprofen', 
-          type: 'NSAID', 
-          desc: 'Effective for managing pain and inflammation associated with subacute thyroiditis.',
-          dosage: '400-800 mg every 6-8 hours as needed.',
-          interactions: 'Aspirin, anticoagulants, and corticosteroids.'
-        },
-        { 
-          name: 'Propylthiouracil (PTU)', 
-          type: 'Antithyroid Agent', 
-          desc: 'Used for hyperthyroidism, especially in the first trimester of pregnancy.',
-          dosage: '100-300 mg daily in divided doses.',
-          interactions: 'Similar to Methimazole; requires liver function monitoring.'
-        }
-      ];
-      setSuggestedMeds(meds.filter(m => 
-        m.name.toLowerCase().includes(symptomSearch.toLowerCase()) || 
-        m.type.toLowerCase().includes(symptomSearch.toLowerCase()) ||
-        m.desc.toLowerCase().includes(symptomSearch.toLowerCase())
-      ).length > 0 ? meds.filter(m => 
-        m.name.toLowerCase().includes(symptomSearch.toLowerCase()) || 
-        m.type.toLowerCase().includes(symptomSearch.toLowerCase()) ||
-        m.desc.toLowerCase().includes(symptomSearch.toLowerCase())
-      ) : meds.slice(0, 3));
+    try {
+      const res = await api.searchMedications(symptomSearch);
+      if (res.status === 'success') {
+        setSuggestedMeds(res.data.medications.map((m: any) => ({
+          name: m.name,
+          type: m.category,
+          desc: m.description,
+          dosage: m.dosage,
+          interactions: m.interactions
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to search medications', err);
+    } finally {
       setIsSearching(false);
-    }, 800);
+    }
   };
 
   return (
