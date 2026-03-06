@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { api } from '../services/api';
 import { 
   Stethoscope, 
   Building2, 
@@ -15,9 +16,48 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../types';
 
-export const Signup: React.FC<{ onComplete: () => void; onLogin: () => void }> = ({ onComplete, onLogin }) => {
+export const Signup: React.FC<{ onComplete: (token: string) => void; onLogin: () => void }> = ({ onComplete, onLogin }) => {
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState<'individual' | 'organization' | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    licenseId: '',
+    specialization: 'Radiologist',
+    password: '',
+    passwordConfirm: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSignup = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.signup({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        passwordConfirm: formData.passwordConfirm,
+        role: 'user' // Default role
+      });
+
+      if (res.status === 'success') {
+        onComplete(res.token);
+      } else {
+        setError(res.message || 'Signup failed');
+      }
+    } catch (err) {
+      setError('An error occurred during signup');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background-light flex items-center justify-center p-4 relative">
@@ -146,28 +186,54 @@ export const Signup: React.FC<{ onComplete: () => void; onLogin: () => void }> =
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input type="text" placeholder="Dr. Sarah Chen" className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Dr. Sarah Chen"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input type="email" placeholder="sarah.chen@hospital.org" className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="sarah.chen@hospital.org"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Medical License ID</label>
                   <div className="relative">
                     <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input type="text" placeholder="ML-8829102" className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <input
+                      type="text"
+                      name="licenseId"
+                      value={formData.licenseId}
+                      onChange={handleInputChange}
+                      placeholder="ML-8829102"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Specialization</label>
                   <div className="relative">
                     <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <select className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none">
+                    <select
+                      name="specialization"
+                      value={formData.specialization}
+                      onChange={handleInputChange}
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none"
+                    >
                       <option>Radiologist</option>
                       <option>Endocrinologist</option>
                       <option>General Surgeon</option>
@@ -210,18 +276,34 @@ export const Signup: React.FC<{ onComplete: () => void; onLogin: () => void }> =
               </div>
 
               <div className="space-y-6">
+                {error && <p className="text-red-500 text-sm text-center font-bold">{error}</p>}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Create Password</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input type="password" placeholder="••••••••" className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="••••••••"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
                   </div>
-                  <div className="flex gap-1 mt-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="h-1 flex-1 bg-emerald-500 rounded-full"></div>
-                    ))}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <input
+                      type="password"
+                      name="passwordConfirm"
+                      value={formData.passwordConfirm}
+                      onChange={handleInputChange}
+                      placeholder="••••••••"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
                   </div>
-                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Strong Password</p>
                 </div>
 
                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
@@ -258,10 +340,11 @@ export const Signup: React.FC<{ onComplete: () => void; onLogin: () => void }> =
                   Back
                 </button>
                 <button 
-                  onClick={onComplete}
-                  className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-xl shadow-primary/25 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                  onClick={handleSignup}
+                  disabled={loading}
+                  className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-xl shadow-primary/25 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  Complete Registration
+                  {loading ? 'Processing...' : 'Complete Registration'}
                   <CheckCircle2 className="w-5 h-5" />
                 </button>
               </div>

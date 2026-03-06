@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../services/api';
 import { 
   Download, 
   Eye, 
@@ -23,24 +24,43 @@ const reports = [
 ];
 
 export const Reports: React.FC<{ onNavigate: (page: any) => void }> = ({ onNavigate }) => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const res = await api.getReports();
+        if (res.status === 'success') {
+          setData(res.data.reports);
+        }
+      } catch (err) {
+        console.error('Failed to fetch reports', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, []);
+
   return (
     <div className="flex min-h-screen">
       <main className="flex-1 p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reports.map((report) => (
+          {data.map((report) => (
             <div 
-              key={report.id} 
+              key={report._id}
               className="group bg-white rounded-2xl border border-border-light overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/50 transition-all duration-300 cursor-pointer"
               onClick={() => onNavigate('report-detail')}
             >
               <div className="relative aspect-video bg-slate-900 overflow-hidden">
                 <img 
-                  src={report.image} 
+                  src={report.analysisId?.imageUrl ? `http://localhost:8000${report.analysisId.imageUrl}` : 'https://via.placeholder.com/300x200'}
                   alt="Ultrasound" 
                   className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-2 left-2 bg-primary/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">AI Detected</div>
-                {report.level === 'TR5' && (
+                {report.riskLevel === 'High' && (
                   <div className="absolute inset-0 border-[3px] border-red-500/40 rounded-full w-24 h-20 top-1/4 left-1/3 blur-[1px]"></div>
                 )}
               </div>
@@ -48,22 +68,27 @@ export const Reports: React.FC<{ onNavigate: (page: any) => void }> = ({ onNavig
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-bold text-lg mb-0.5 text-slate-900">
-                      {report.initials} <span className="text-xs font-mono text-text-muted ml-2">#ID-{report.id}</span>
+                      {report.patientId?.name || 'N/A'} <span className="text-xs font-mono text-text-muted ml-2">#ID-{report._id.slice(-5)}</span>
                     </h3>
-                    <p className="text-xs text-text-muted">{report.date} • {report.dr}</p>
+                    <p className="text-xs text-text-muted">{new Date(report.createdAt).toLocaleDateString()} • Dr. Thorne</p>
                   </div>
-                  <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border", report.color)}>
-                    TIRADS {report.level.replace('TR', '')}
+                  <span className={cn(
+                    "text-[10px] font-bold px-2.5 py-1 rounded-full border",
+                    report.riskLevel === 'High' ? "text-red-600 bg-red-50 border-red-200" :
+                    report.riskLevel === 'Moderate' ? "text-orange-600 bg-orange-50 border-orange-200" :
+                    "text-emerald-600 bg-emerald-50 border-emerald-200"
+                  )}>
+                    {report.riskLevel === 'High' ? 'TIRADS 5' : report.riskLevel === 'Moderate' ? 'TIRADS 4' : 'TIRADS 2'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
                     <p className="text-[10px] text-text-muted uppercase font-bold tracking-tight">Max Size</p>
-                    <p className="text-sm font-bold text-text-main">{report.size}</p>
+                    <p className="text-sm font-bold text-text-main">{report.analysisId?.maxSize || 'N/A'}</p>
                   </div>
                   <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
                     <p className="text-[10px] text-text-muted uppercase font-bold tracking-tight">Composition</p>
-                    <p className="text-sm font-bold text-text-main">{report.composition}</p>
+                    <p className="text-sm font-bold text-text-main">Solid</p>
                   </div>
                 </div>
                 <div className="flex gap-2">

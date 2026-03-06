@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../services/api';
 import { 
   Users, 
   FileText, 
@@ -36,16 +37,37 @@ const activityData = [
 ];
 
 export const Dashboard: React.FC<{ onNavigate: (page: any) => void }> = ({ onNavigate }) => {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.getStats();
+        if (res.status === 'success') {
+          setStats(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch stats', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const statCards = [
+    { label: 'Total Patients', value: stats?.patientCount || '0', change: '+12%', icon: Users, color: 'bg-blue-500' },
+    { label: 'Scans Analyzed', value: stats?.analysisCount || '0', change: '+8%', icon: Activity, color: 'bg-primary' },
+    { label: 'High Risk (TR5)', value: stats?.highRiskCount || '0', change: '-3%', icon: AlertCircle, color: 'bg-red-500' },
+    { label: 'Pending Reviews', value: stats?.pendingCount || '0', change: 'New', icon: Clock, color: 'bg-amber-500' },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Patients', value: '1,284', change: '+12%', icon: Users, color: 'bg-blue-500' },
-          { label: 'Scans Analyzed', value: '4,592', change: '+8%', icon: Activity, color: 'bg-primary' },
-          { label: 'High Risk (TR5)', value: '42', change: '-3%', icon: AlertCircle, color: 'bg-red-500' },
-          { label: 'Pending Reviews', value: '18', change: 'New', icon: Clock, color: 'bg-amber-500' },
-        ].map((stat, i) => (
+        {statCards.map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-2xl border border-border-light shadow-sm hover:shadow-md transition-all group">
             <div className="flex justify-between items-start mb-4">
               <div className={cn("p-3 rounded-xl text-white shadow-lg", stat.color)}>
@@ -129,29 +151,24 @@ export const Dashboard: React.FC<{ onNavigate: (page: any) => void }> = ({ onNav
               </button>
             </div>
             <div className="divide-y divide-border-light">
-              {[
-                { name: 'Robert Williamson', id: '#RW-7721', time: '10 mins ago', level: 'TR5', status: 'Urgent Review' },
-                { name: 'Eleanor Thompson', id: '#TH-9021', time: '45 mins ago', level: 'TR4', status: 'Monitoring' },
-                { name: 'Sarah Jenkins', id: '#SJ-1102', time: '2 hours ago', level: 'TR2', status: 'Routine' },
-                { name: 'Michael Chen', id: '#MC-8821', time: '4 hours ago', level: 'TR3', status: 'Follow-up' },
-              ].map((patient, i) => (
+              {(stats?.recentReports || []).map((report: any, i: number) => (
                 <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-primary">
-                      {patient.name.split(' ').map(n => n[0]).join('')}
+                      {report.patientId?.name ? report.patientId.name.split(' ').map((n: string) => n[0]).join('') : 'P'}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{patient.name}</p>
-                      <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">{patient.id} • {patient.time}</p>
+                      <p className="text-sm font-bold text-slate-900">{report.patientId?.name || 'Unknown Patient'}</p>
+                      <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">#{report.id?.slice(-4).toUpperCase()} • {new Date(report.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <span className={cn(
                       "text-[10px] font-bold px-2 py-0.5 rounded",
-                      patient.level === 'TR5' ? "bg-red-50 text-red-600" : 
-                      patient.level === 'TR4' ? "bg-orange-50 text-orange-600" : "bg-emerald-50 text-emerald-600"
+                      report.riskLevel === 'High' ? "bg-red-50 text-red-600" :
+                      report.riskLevel === 'Moderate' ? "bg-orange-50 text-orange-600" : "bg-emerald-50 text-emerald-600"
                     )}>
-                      {patient.level}
+                      {report.riskLevel === 'High' ? 'TR5' : report.riskLevel === 'Moderate' ? 'TR4' : 'TR2'}
                     </span>
                     <button className="text-slate-400 group-hover:text-primary transition-colors">
                       <ChevronRight className="w-5 h-5" />
