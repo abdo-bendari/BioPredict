@@ -23,8 +23,12 @@ import { motion, AnimatePresence } from 'motion/react';
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
-  const handleNavigate = (page: Page) => {
+  const handleNavigate = (page: Page, id?: string) => {
+    if (page === 'report-detail' && id) setSelectedReportId(id);
+    if (page === 'patient-profile' && id) setSelectedPatientId(id);
     setCurrentPage(page);
   };
 
@@ -53,9 +57,9 @@ const App: React.FC = () => {
       case 'reports':
         return <Reports onNavigate={handleNavigate} />;
       case 'patient-profile':
-        return <PatientProfile />;
+        return <PatientProfile id={selectedPatientId} />;
       case 'report-detail':
-        return <ReportDetail onBack={() => handleNavigate('reports')} />;
+        return <ReportDetail id={selectedReportId} onBack={() => handleNavigate('reports')} />;
       case 'new-analysis':
         return <NewAnalysis onComplete={() => handleNavigate('report-detail')} />;
       case 'analysis':

@@ -23,6 +23,7 @@ const analysisSchema = new mongoose.Schema({
     enum: ['benign', 'malignant'],
     required: [true, 'An analysis must have a classification.']
   },
+  maxSize: String,
   confidenceScore: {
     type: Number,
     required: [true, 'An analysis must have a confidence score.']

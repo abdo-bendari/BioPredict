@@ -152,7 +152,11 @@ export const Dashboard: React.FC<{ onNavigate: (page: any) => void }> = ({ onNav
             </div>
             <div className="divide-y divide-border-light">
               {(stats?.recentReports || []).map((report: any, i: number) => (
-                <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
+                <div
+                  key={i}
+                  className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group"
+                  onClick={() => onNavigate('report-detail', report._id)}
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-primary">
                       {report.patientId?.name ? report.patientId.name.split(' ').map((n: string) => n[0]).join('') : 'P'}

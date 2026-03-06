@@ -12,9 +12,11 @@ const patientSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    enum: ['male', 'female', 'other'],
+    enum: ['Male', 'Female', 'Other'],
     required: [true, 'A patient must have a gender']
   },
+  dob: String,
+  phone: String,
   medicalHistory: [String],
   medications: [String],
   analyses: [

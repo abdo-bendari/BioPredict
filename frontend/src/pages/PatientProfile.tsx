@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../services/api';
 import { 
   LineChart, 
   Line, 
@@ -43,33 +44,53 @@ const sizeData = [
   { quarter: "Q2 '24", size: 1.84 },
 ];
 
-export const PatientProfile: React.FC = () => {
+export const PatientProfile: React.FC<{ id: string | null }> = ({ id }) => {
+  const [patient, setPatient] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      if (!id) return;
+      try {
+        const res = await api.getPatient(id);
+        if (res.status === 'success') {
+          setPatient(res.data.patient);
+        }
+      } catch (err) {
+        console.error('Failed to fetch patient', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPatient();
+  }, [id]);
+
+  if (loading || !patient) return <div className="p-8 text-center">Select a patient to view profile</div>;
+
   return (
     <div className="space-y-6">
       {/* Patient Header Summary */}
       <header className="bg-white rounded-2xl shadow-sm border border-border-light p-6 flex flex-wrap items-center justify-between gap-6">
         <div className="flex items-center gap-5">
           <div className="relative">
-            <img 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFyd0CgbM-y3WhUpzRWntM_GJeUvZsYkiOBtSFb5nNIBHnbR4y1xabI3at3XpXz90pWqHo5OBz6bv-W-Izyib3iZMAbNEyn89TJrq48tH3cFWBljzok2_uwMBxyVZxk01tLMH4YsBHnErYqjgDyK59kvp7ZnrMNrEYD90EvpXzhVBTf6STN4PUkeC8DPCsaK8W1NDceA-Cbpb5a-xfL5LCJrja1hB9sR5BYkuM7jbHh9GfBJSThNSqrAWr1pcryxOFZt_wPQmg-wPZ" 
-              alt="Eleanor Thompson" 
-              className="w-16 h-16 rounded-2xl object-cover"
-            />
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-2xl">
+              {patient.name[0]}
+            </div>
             <span className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></span>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Eleanor Thompson</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{patient.name}</h1>
             <div className="flex items-center gap-3 text-sm text-text-muted mt-1">
-              <span>ID: #TH-90210</span>
+              <span>ID: #{patient._id.slice(-5)}</span>
               <span>•</span>
-              <span>DOB: 05/12/1958 (65y)</span>
+              <span>DOB: {patient.dob} ({patient.age}y)</span>
               <span>•</span>
               <span className="flex items-center gap-1 text-primary font-semibold">
-                <History className="w-4 h-4" /> Last Seen: 2 days ago
+                <History className="w-4 h-4" /> Last Seen: {new Date(patient.createdAt).toLocaleDateString()}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1 text-slate-600">
-                <Phone className="w-4 h-4" /> +1 (555) 123-4567
+                <Phone className="w-4 h-4" /> {patient.phone || 'N/A'}
               </span>
             </div>
           </div>
@@ -182,20 +203,19 @@ export const PatientProfile: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light text-sm">
-                  {[
-                    { date: 'Oct 12, 2023', dr: 'Dr. Sarah Jenkins', level: 'TR-4', color: 'bg-amber-100 text-amber-700', findings: 'Hypoechoic, irregular margins, microcalcifications...' },
-                    { date: 'Apr 08, 2023', dr: 'Dr. Michael Chen', level: 'TR-3', color: 'bg-yellow-100 text-yellow-700', findings: 'Stable isoechoic nodule, no peripheral vascularity.' },
-                    { date: 'Nov 15, 2022', dr: 'Dr. Michael Chen', level: 'TR-3', color: 'bg-yellow-100 text-yellow-700', findings: 'Baseline scan, 1.2cm solid nodule.' },
-                  ].map((row, i) => (
+                  {(patient.analyses || []).map((analysis: any, i: number) => (
                     <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4 font-medium text-slate-700 italic">{row.date}</td>
-                      <td className="px-6 py-4">{row.dr}</td>
+                      <td className="px-6 py-4 font-medium text-slate-700 italic">{new Date(analysis.analysisDate).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">Dr. Sarah Jenkins</td>
                       <td className="px-6 py-4">
-                        <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase", row.color)}>
-                          {row.level}
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                          analysis.classification === 'malignant' ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                        )}>
+                          {analysis.classification === 'malignant' ? 'TR-5' : 'TR-2'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-text-muted truncate max-w-[200px]">{row.findings}</td>
+                      <td className="px-6 py-4 text-text-muted truncate max-w-[200px]">{analysis.aiPrediction}</td>
                       <td className="px-6 py-4 text-right">
                         <button className="text-primary hover:text-primary/70 transition-colors">
                           <Download className="w-5 h-5" />
@@ -263,11 +283,11 @@ export const PatientProfile: React.FC = () => {
             <div className="space-y-3">
               <div>
                 <p className="text-[10px] font-bold text-text-muted uppercase">Medical History</p>
-                <p className="text-xs text-slate-700 leading-relaxed">Chronic hypertension, family history of thyroid nodules, previous appendectomy (2015).</p>
+                <p className="text-xs text-slate-700 leading-relaxed">{patient.medicalHistory?.join(', ') || 'None'}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold text-text-muted uppercase">Smoking Status</p>
-                <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">Current Smoker</span>
+                <p className="text-[10px] font-bold text-text-muted uppercase">Medications</p>
+                <p className="text-xs text-slate-700">{patient.medications?.join(', ') || 'None'}</p>
               </div>
             </div>
           </div>

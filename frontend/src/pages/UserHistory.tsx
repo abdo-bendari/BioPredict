@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../services/api';
 import { motion } from 'motion/react';
 import { 
   Activity, 
@@ -45,6 +46,25 @@ const scanHistory = [
 ];
 
 export const UserHistory: React.FC<{ onNavigate: (page: any) => void }> = ({ onNavigate }) => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await api.getHistory();
+        if (res.status === 'success') {
+          setData(res.data.history);
+        }
+      } catch (err) {
+        console.error('Failed to fetch history', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background-light">
       {/* Simple Nav */}
@@ -80,50 +100,38 @@ export const UserHistory: React.FC<{ onNavigate: (page: any) => void }> = ({ onN
           </div>
 
           <div className="grid gap-6">
-            {scanHistory.map((scan, i) => (
+            {data.map((item, i) => (
               <motion.div 
-                key={scan.id}
+                key={item._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 className="bg-white rounded-[32px] border border-slate-200 p-6 flex flex-col md:flex-row items-center gap-8 hover:shadow-xl hover:border-primary/20 transition-all group"
               >
                 <div className="w-full md:w-48 aspect-video rounded-2xl overflow-hidden bg-slate-900 shrink-0">
-                  <img src={scan.img} alt="Scan" className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500" />
+                  <Activity className="w-full h-full text-primary p-12 opacity-20" />
                 </div>
                 
                 <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scan ID</p>
-                    <p className="font-bold text-slate-900">{scan.id}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action</p>
+                    <p className="font-bold text-slate-900">{item.action}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</p>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3 h-3 text-primary" />
-                      <p className="font-bold text-slate-700">{scan.date}</p>
+                      <p className="font-bold text-slate-700">{new Date(item.timestamp).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Risk Level</p>
-                    <div className={cn(
-                      "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                      scan.risk === 'High' ? "bg-red-50 text-red-600" : 
-                      scan.risk === 'Moderate' ? "bg-orange-50 text-orange-600" : "bg-emerald-50 text-emerald-600"
-                    )}>
-                      {scan.risk === 'High' ? <AlertCircle className="w-3 h-3" /> : 
-                       scan.risk === 'Moderate' ? <Clock className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                      {scan.risk}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">TI-RADS</p>
-                    <p className="font-bold text-slate-900">Score: {scan.tirads}</p>
+                  <div className="space-y-1 col-span-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Details</p>
+                    <p className="text-xs text-text-muted">{JSON.stringify(item.details)}</p>
                   </div>
                 </div>
 
                 <button className="w-full md:w-auto px-6 py-3 bg-slate-50 text-primary font-bold rounded-2xl hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 group/btn">
-                  View Results
+                  View Detail
                   <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                 </button>
               </motion.div>

@@ -18,7 +18,7 @@ const reportSchema = new mongoose.Schema({
   },
   riskLevel: {
     type: String,
-    enum: ['low', 'moderate', 'high'],
+    enum: ['Low', 'Moderate', 'High'],
     required: [true, 'Report must have a risk level.']
   },
   recommendations: [String],
